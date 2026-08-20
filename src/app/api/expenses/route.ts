@@ -1,19 +1,27 @@
-import { expenses,getNextId } from "@/lib/data"
-import {Expense} from "@/lib/types"
+import {supabase} from '@/lib/supabase'
+import { Expense } from '@/lib/types';
+import { json } from 'stream/consumers';
 export async function GET() {
-    return Response.json({expenses})
+    const {data,error} = await supabase.from("expenses").select("*");
+    if(error){
+        return Response.json({error:error.message},{status:500})
+    }
+    return Response.json({expenses:data})
 }
-export async function POST(req:Request){
-    const body = await req.json();
-     console.log("Raw body:", JSON.stringify(body));
-  console.log("amount:", body.amount, "category:", body.category, "date:", body.date);
-    const newExpanse:Expense = {
-        id:getNextId(),
+
+export async function POST(request:Request) {
+    const body = await request.json();
+    console.log(body,JSON.stringify(body));
+    const newExpanse:Expense ={
+        title:body.title,
         amount:body.amount,
         category:body.category,
-        date:body.date,
+        expense_date: body.expense_date,
         note:body.note
     }
-    expenses.push(newExpanse);
-    return Response.json(newExpanse,{status:201})
+    const {data,error} = await supabase.from("expenses").insert(newExpanse).select().single();
+    if(error){
+        return Response.json({error:error.message},{status:500})
+    }
+    return Response.json({expense:data},{status:201})
 }
