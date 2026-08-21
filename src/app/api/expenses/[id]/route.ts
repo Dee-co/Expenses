@@ -1,29 +1,80 @@
-import {expenses} from"@/lib/data"
-export async function GET(req:Request,{params}:{params: Promise<{id:string}>}) {
-    const {id} = await params;
-     const expense = expenses.find((item)=> item.id === Number(id))
-    if(!expense){
-        return Response.json({error:'Expenses not found'},{status:404})
-    }
-    return Response.json({expense})
+import { supabase } from "@/lib/supabase";
+import { Expense } from "@/lib/types";
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("*")
+    .eq("id", Number(id))
+    .single();
+  if (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+  if (!data) {
+    return Response.json({ error: "Expense not found" }, { status: 404 });
+  }
+  const { error: deleteError } = await supabase
+    .from("expenses")
+    .delete()
+    .eq("id", Number(id));
+  if (deleteError) {
+    return Response.json({ error: deleteError.message }, { status: 500 });
+  }
+  return Response.json({ message: "Expense Deleted Successfully", data });
 }
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("*")
+    .eq("id", Number(id))
+    .single();
+  if (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+  if (!data) {
+    return Response.json({ error: "Expense not found" }, { status: 404 });
+  }
+  return Response.json({ data }, { status: 200 });
+}
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+type ExpenseUpdate = Partial<Expense>;
+  const body:ExpenseUpdate = await request.json();
 
-export async function DELETE(req:Request,{params}:{params:Promise<{id:string}>}){
-    const {id} = await params;
-    const expenseId = expenses.findIndex((item) => item.id === Number(id));
-    if(expenseId === -1){
-        return Response.json({error:"Expenses not found"},{status:401})
-    }
-    expenses.splice(expenseId,1);
-    return Response.json({message:"Expense Deleted Successfully"},{status:200})
-}
-export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
-    const body = await req.json();
-    const {id} = await params;
-    const index = expenses.findIndex((item) => item.id === Number(id))
-    if(index === -1){
-        return Response.json({error:"Expense Not Found"},{status:401})
-    }
-    expenses[index] = {...expenses[index],...body}
-    return Response.json({message:"Expense Updated successfully"},{status:203})
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("*")
+    .eq("id", Number(id))
+    .single();
+  if (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+  if (!data) {
+    return Response.json({ error: "Expense not found" }, { status: 404 });
+  }
+
+  const { data: updatedExpense, error: updateError } = await supabase
+    .from("expenses")
+    .update(body)
+    .eq("id", Number(id))
+    .select()
+    .single();
+  if (updateError) {
+    return Response.json({ error: updateError.message }, { status: 500 });
+  }
+
+  return Response.json({
+    message: "Expense updated successfully",
+    expense: updatedExpense,
+  });
 }
