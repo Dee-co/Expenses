@@ -1,6 +1,5 @@
 import {supabase} from '@/lib/supabase'
 import { Expense } from '@/lib/types';
-import { json } from 'stream/consumers';
 export async function GET() {
     const {data,error} = await supabase.from("expenses").select("*");
     if(error){
