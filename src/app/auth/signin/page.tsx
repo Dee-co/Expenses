@@ -231,7 +231,7 @@ export default function SigninPage() {
                 type="button"
                 onClick={() =>
                   router.push(
-                    "/auth/forgot-password"
+                    "/auth/forget-password"
                   )
                 }
                 className="
@@ -241,7 +241,7 @@ export default function SigninPage() {
                   hover:underline
                 "
               >
-                Forgot password?
+                Forget password?
               </button>
             </div>
           </div>
