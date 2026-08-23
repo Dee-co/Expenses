@@ -1,5 +1,6 @@
 import { sendOtpEmail } from "@/lib/mailer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import crypto from "crypto";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -42,12 +43,58 @@ export async function POST(request: Request) {
         }
       );
     }
-    const otp = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
-    const expiresAt = new Date(
-      Date.now() + 10 * 60 * 1000
-    ).toISOString();
+    const { data: existingOtp, error: existingOtpError } = await supabaseAdmin
+      .from("password_reset_tokens")
+      .select("id, otp, expires_at, reset_token, reset_token_expires_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (existingOtpError) {
+      console.log("existingOtpError:", existingOtpError);
+      return Response.json(
+        { message: "Failed to process OTP" },
+        { status: 500 }
+      );
+    }
+    if (
+      existingOtp &&
+      new Date(existingOtp.expires_at).getTime() > Date.now()
+    ) {
+      return Response.json(
+        {
+          message:
+            "OTP is still valid. Please wait until it expires.",
+        },
+        { status: 400 }
+      );
+    }
+    if (existingOtp) {
+      const { error: deleteError } = await supabaseAdmin
+        .from("password_reset_tokens")
+        .delete()
+        .eq("id", existingOtp.id);
+
+      if (deleteError) {
+        console.log("deleteError:", deleteError);
+
+        return Response.json(
+          { message: "Failed to generate new OTP" },
+          { status: 500 }
+        );
+      }
+    }
+    if (existingOtpError) {
+      console.log("existingOtpError:", existingOtpError);
+
+      return Response.json(
+        { message: "Failed to process OTP" },
+        { status: 500 }
+      );
+    }
+
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const reset_token_expires_at = new Date(Date.now() + 15 * 60 * 100);
     const { error: deleteError } = await supabaseAdmin
       .from("password_reset_tokens")
       .delete()
@@ -70,6 +117,9 @@ export async function POST(request: Request) {
         user_id: user.id,
         otp,
         expires_at: expiresAt,
+        verified: false,
+        reset_token_expires_at,
+        reset_token: resetToken,
       });
 
     if (storeError) {
