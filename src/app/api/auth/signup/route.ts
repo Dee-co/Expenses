@@ -1,8 +1,8 @@
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import bcrypt from "bcryptjs";
 export async function POST(request: Request) {
   const body = await request.json();
-  const { data: existingUser } = await supabase
+  const { data: existingUser } = await supabaseAdmin
     .from("users")
     .select("id")
     .eq("email", body.email)
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     );
   }
   const passwordHash = await bcrypt.hash(body.password, 10);
-  const { data: user, error } = await supabase
+  const { data: user, error } = await supabaseAdmin
     .from("users")
     .insert({
       name: body.name,

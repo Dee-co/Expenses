@@ -1,5 +1,5 @@
 import { generateAccessToken } from "@/lib/jwt";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import jwt from "jsonwebtoken";
 export async function POST(request: Request) {
   const body = await request.json();
@@ -9,13 +9,13 @@ export async function POST(request: Request) {
   try {
     const verifyToken = jwt.verify(
       body.refreshToken,
-      process.env.NEXT_PUBLIC_JWT_REFRESH_SECRET!
+      process.env.NEXT_JWT_REFRESH_SECRET!
     ) as jwt.JwtPayload;
     const userId = verifyToken?.userId;
     if (!userId) {
       return Response.json({ error: "invalid Refresh token" }, { status: 401 });
     }
-    const { data: storedToken, error } = await supabase
+    const { data: storedToken, error } = await supabaseAdmin
       .from("refresh_tokens")
       .select("id,user_id, expires_at")
       .eq("token", body.refreshToken)

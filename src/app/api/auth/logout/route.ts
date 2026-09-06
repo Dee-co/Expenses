@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const {
       data: checkToken,
       error: checkTokenError,
-    } = await supabase
+    } = await supabaseAdmin
       .from("refresh_tokens")
       .select("id, user_id, expires_at")
       .eq("token", body.refreshToken)
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     // Delete refresh token
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await supabaseAdmin
       .from("refresh_tokens")
       .delete()
       .eq("id", checkToken.id);

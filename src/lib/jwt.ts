@@ -4,7 +4,7 @@ export function generateAccessToken(userId: string) {
     {
       userId,
     },
-    process.env.NEXT_PUBLIC_JWT_ACCESS_SECRET!,
+    process.env.NEXT_JWT_ACCESS_SECRET!,
     { expiresIn: "15m" }
   );
 }
@@ -13,7 +13,7 @@ export function generateRefreshToken(userId: string) {
     {
       userId,
     },
-    process.env.NEXT_PUBLIC_JWT_REFRESH_SECRET!,
+    process.env.NEXT_JWT_REFRESH_SECRET!,
     {
       expiresIn: "7d",
     }

@@ -1,15 +1,16 @@
 import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { data: user, error } = await supabase
+  const { data: user, error } = await supabaseAdmin
     .from("users")
     .select("id,name,email,password_hash")
     .eq("email", body.email)
     .single();
   if (error || !user) {
+    console.log("getting eroor",error,user)
     return Response.json(
       { error: "Invalid email & password" },
       { status: 401 }
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
   }
   const accessToken = generateAccessToken(user.id);
   const refreshToken = generateRefreshToken(user.id);
-  const {error:refreshTokenError} = await supabase.from("refresh_tokens").insert({
+  const {error:refreshTokenError} = await supabaseAdmin.from("refresh_tokens").insert({
     user_id:user.id,
     token:refreshToken,
     expires_at:new Date(Date.now()+7*24*60*60*1000).toISOString()
