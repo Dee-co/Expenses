@@ -6,9 +6,11 @@ import {
   Wallet,
   BookOpen,
   User,
+  PowerOff,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { apiService } from "@/services/apiService";
+import Button from "./Button";
 interface SidebarProps {
   onNavigate?: () => void;
 }
@@ -107,7 +109,18 @@ export default function Sidebar({
         </div>
       </nav>
       <div className="border-t border-border p-4">
-        <button
+<Button
+  buttonType="text"
+  color="danger"
+  onClick={handleLogout}
+  className="w-full"
+  leftIcon={<PowerOff size={15} />}
+  size="sm"
+  variant="outline"
+>
+  Logout
+</Button>
+        {/* <button
           type="button"
           onClick={handleLogout}
           className="
@@ -116,6 +129,7 @@ export default function Sidebar({
             px-4
             py-3
             text-left
+            cursor-pointer
             text-sm
             text-text-muted
             hover:bg-red-50
@@ -123,7 +137,7 @@ export default function Sidebar({
           "
         >
           Logout
-        </button>
+        </button> */}
       </div>
 
     </aside>

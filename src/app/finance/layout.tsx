@@ -1,6 +1,5 @@
 import AuthGuard from "@/components/AuthGuard";
 import FinanceLayoutClient from "@/components/FinanceLayoutClient";
-
 export default function FinanceLayout({
   children,
 }: Readonly<{
@@ -9,7 +8,6 @@ export default function FinanceLayout({
   return (
     <FinanceLayoutClient>
       <AuthGuard>{children}</AuthGuard>
-      
     </FinanceLayoutClient>
   );
 }

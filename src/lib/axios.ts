@@ -1,5 +1,4 @@
 import axios from "axios";
-import { error } from "console";
 
 const api = axios.create({
   headers: {
@@ -34,7 +33,7 @@ api.interceptors.response.use(
   },
   async (error)=>{
     const originalRequest = error.config;
-    if(error.response.status !== 401){
+    if(error.response?.status !== 401){
       return Promise.reject(error)
     }
     const refreshToken = localStorage.getItem("refreshToken");

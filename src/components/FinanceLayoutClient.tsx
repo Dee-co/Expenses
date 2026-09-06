@@ -15,17 +15,11 @@ export default function FinanceLayoutClient({
 
   return (
     <div className="flex min-h-screen bg-background">
-
-      {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <Sidebar />
       </div>
-
-      {/* Mobile Sidebar */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-
-          {/* Overlay */}
           <div
             className="
               absolute inset-0
@@ -33,14 +27,10 @@ export default function FinanceLayoutClient({
             "
             onClick={() => setSidebarOpen(false)}
           />
-
-          {/* Sidebar */}
           <div className="relative h-full w-72">
             <Sidebar
               onNavigate={() => setSidebarOpen(false)}
             />
-
-            {/* Close Button */}
             <button
               type="button"
               onClick={() => setSidebarOpen(false)}
@@ -55,6 +45,7 @@ export default function FinanceLayoutClient({
                 justify-center
                 rounded-lg
                 bg-surface
+                cursor-pointer
                 text-text
                 shadow
               "
@@ -64,20 +55,13 @@ export default function FinanceLayoutClient({
           </div>
         </div>
       )}
-
-      {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col">
-
-        {/* Header */}
         <Header
           onMenuClick={() => setSidebarOpen(true)}
         />
-
-        {/* Content */}
-        <main className="flex-1 p-4 sm:p-6">
+        <main className="flex-1 px-2 py-2 sm:px-4">
           {children}
         </main>
-
       </div>
     </div>
   );

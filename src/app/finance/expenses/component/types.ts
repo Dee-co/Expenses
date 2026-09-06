@@ -1,0 +1,29 @@
+export interface Expenses {
+  id: number;
+  bill_url: string | null;
+  expense_date: string;
+  amount: number;
+  note: string;
+  title: string;
+  category: Category | null;
+}
+export interface Category {
+  id: string;
+  name: string;
+}
+export interface Pagination {
+  limit: number;
+  page: number;
+  total: number;
+  totalPages: number;
+}
+export interface ExpensesTableProps {
+  data: Expenses[];
+  loader: Boolean;
+  pagination: Pagination;
+  onPageChange: (page: number) => void;
+}
+export interface ExpensesResponse {
+  expenses: Expenses[];
+  pagination: Pagination;
+}
