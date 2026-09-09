@@ -51,10 +51,9 @@ api.interceptors.response.use(
     }
     originalRequest._retry = true;
     try {
-      const response = await axios.post("/api/auth/refresh", {
+      const response = await axios.post("/api/auth/refreshToken", {
         refreshToken,
       });
-      console.log("getting refresh token",response)
       const newAccessToken = response.data.accessToken;
       localStorage.setItem("accessToken", newAccessToken);
       originalRequest.headers.Authorization =

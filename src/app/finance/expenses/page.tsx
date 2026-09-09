@@ -6,18 +6,17 @@ import { ExpensesResponse } from "./component/types";
 import ExpensesTable from "./component/expensesTable";
 
 export default function Expense() {
-    const [loading,setLoading] = useState<Boolean>(false)
+  const [loading, setLoading] = useState<Boolean>(false);
   const [expenses, setExpenses] = useState<ExpensesResponse | null>(null);
   const getExpenses = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const response = await apiService.get<ExpensesResponse>(`/api/expenses`);
-      console.log("getting response", response);
       setExpenses(response);
     } catch (error) {
       console.log("getting error", error);
-    }finally{
-        setLoading(false)
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => {
@@ -34,7 +33,6 @@ export default function Expense() {
       </div>
       <ExpensesTable
         data={expenses?.expenses ?? []}
-        
         pagination={
           expenses?.pagination ?? {
             page: 1,
