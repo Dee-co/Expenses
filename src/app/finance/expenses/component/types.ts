@@ -27,3 +27,26 @@ export interface ExpensesResponse {
   expenses: Expenses[];
   pagination: Pagination;
 }
+export interface CategoryData {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+export interface CategoryOptions{
+  label:string;
+  value:string;
+}
+export interface CategoryResponse{
+categories:CategoryData[]
+}
+export interface FilterProps{
+  categoryOption:CategoryOptions[] | null
+}
+export interface HandleDetailPayload{
+  title:string;
+  amount:string;
+  category:string;
+  bill?:File | null;
+  note?:string
+}

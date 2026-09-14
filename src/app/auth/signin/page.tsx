@@ -3,6 +3,8 @@
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import { apiService } from "@/services/apiService";
+import { useUserStore } from "@/stores/userDetails";
+import { User } from "@/types/User";
 import { ArrowRight, Eye, EyeClosed } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -17,12 +19,16 @@ interface SigninResponse {
   accessToken: string;
   refreshToken: string;
 }
+interface UserResponse {
+  user: User;
+}
 export default function SigninPage() {
   const router = useRouter();
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
+  const setUserDetail = useUserStore(state=>state.setUserDetail)
   const [error, setError] = useState({
     email: "",
     password: "",
@@ -32,7 +38,6 @@ export default function SigninPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -78,7 +83,20 @@ export default function SigninPage() {
 
     return !newError.email && !newError.password;
   };
-
+const getUserDetail = async ()=>{
+  try {
+    const response = await apiService.get<UserResponse>("/api/user");
+    console.log("user",response);
+    setUserDetail(response?.user)
+  } catch (error:any) {
+     setError((prev) => ({
+        ...prev,
+        api:
+          error?.response?.data?.error ||
+          "Something went wrong. Please try again.",
+      }));
+  }
+}
   const handleSubmit = async () => {
     setSuccess("");
 
@@ -114,9 +132,9 @@ export default function SigninPage() {
         "refreshToken",
         response.refreshToken
       );
-
+      
       setSuccess(response.message);
-
+      await getUserDetail()
       router.replace("/finance");
     } catch (error: any) {
       setError((prev) => ({
@@ -194,6 +212,7 @@ export default function SigninPage() {
             placeholder="Enter your email"
             value={form.email}
             maxLength={40}
+            className="py-4"
             required
             disabled={loading}
             onChange={handleChange}
@@ -205,6 +224,7 @@ export default function SigninPage() {
               label="Password"
               name="password"
               placeholder="Enter your password"
+              className="py-4"
               type={
                 showPassword
                   ? "text"

@@ -22,7 +22,10 @@
     "nodemailer": "^9.0.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "sonner": "^2.0.8"
+    "react-dropzone": "^20.1.2",
+    "react-select": "^5.10.2",
+    "sonner": "^2.0.8",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

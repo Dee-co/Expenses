@@ -1,18 +1,14 @@
 "use client";
-
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-
-
 export default function FinanceLayoutClient({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
   return (
     <div className="flex min-h-screen bg-background">
       <div className="hidden md:block">

@@ -1,7 +1,6 @@
 "use client"
 import Link from "next/link";
 import {
-  LayoutDashboard,
   Receipt,
   Wallet,
   BookOpen,
@@ -11,36 +10,11 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { apiService } from "@/services/apiService";
 import Button from "./Button";
+import { menuItems } from "@/config/sidebarItems";
 interface SidebarProps {
   onNavigate?: () => void;
 }
-const menuItems = [
-  {
-    label: "Dashboard",
-    href: "/finance",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Expenses",
-    href: "/finance/expenses",
-    icon: Receipt,
-  },
-  {
-    label: "Budget",
-    href: "/finance/budget",
-    icon: Wallet,
-  },
-  {
-    label: "Khata",
-    href: "/finance/khata",
-    icon: BookOpen,
-  },
-  {
-    label: "Profile",
-    href: "/finance/profile",
-    icon: User,
-  },
-];
+
 export default function Sidebar({
   onNavigate,
 }: SidebarProps) {

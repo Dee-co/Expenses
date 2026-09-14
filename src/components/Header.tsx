@@ -1,6 +1,10 @@
 "use client";
 
+import { menuItems, SidebarMenu } from "@/config/sidebarItems";
+import { useUserStore } from "@/stores/userDetails";
 import { Menu, Bell } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -9,6 +13,15 @@ interface HeaderProps {
 export default function Header({
   onMenuClick,
 }: HeaderProps) {
+  const user = useUserStore(state=>state.userDetail);
+  const pathname = usePathname();
+  const [routeDetail,setRouteDetail] = useState<SidebarMenu | null>(null)
+  useEffect(()=>{
+    if(pathname){
+     const detail =  menuItems?.find((item)=> item.href === pathname);
+     setRouteDetail(detail || null)
+    }
+  },[pathname])
   return (
     <header
       className="
@@ -23,11 +36,7 @@ export default function Header({
         sm:px-6
       "
     >
-
-      {/* Left */}
       <div className="flex items-center gap-3">
-
-        {/* Mobile Menu */}
         <button
           type="button"
           onClick={onMenuClick}
@@ -48,11 +57,11 @@ export default function Header({
 
         <div>
           <h2 className="text-lg font-semibold text-text">
-            Overview
+            {routeDetail?.label}
           </h2>
 
           <p className="hidden text-xs text-text-muted sm:block">
-            Manage your finances
+            {routeDetail?.details}
           </p>
         </div>
 
@@ -60,7 +69,6 @@ export default function Header({
 
       {/* Right */}
       <div className="flex items-center gap-3">
-
         <button
           type="button"
           className="
@@ -76,7 +84,6 @@ export default function Header({
         >
           <Bell size={19} />
         </button>
-
         <div
           className="
             flex
@@ -91,11 +98,9 @@ export default function Header({
             text-white
           "
         >
-          D
+          {user?.name?.charAt(0) || "G"}
         </div>
-
       </div>
-
     </header>
   );
 }

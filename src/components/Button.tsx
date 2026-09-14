@@ -47,7 +47,7 @@ export default function Button({
     success: {
       fill: "bg-success text-white hover:bg-success/90",
       outline:
-        "border border-success text-success hover:bg-success hover:text-white",
+        "border border-success text-success hover:bg-success/90 hover:text-white",
     },
 
     warning: {
@@ -58,7 +58,7 @@ export default function Button({
   };
 
   const sizeClasses = {
-    sm: "px-3 py-2 text-sm",
+    sm: "px-3 py-1 text-sm",
     md: "px-4 py-3 text-base",
     lg: "px-6 py-3.5 text-lg",
   };
@@ -81,9 +81,9 @@ export default function Button({
         disabled:opacity-50
 
         ${variantClasses[color][variant]}
-        ${sizeClasses[size]}
 
-        ${buttonType === "icon" ? "p-3" : ""}
+        ${buttonType === "icon" ? "p-3" : sizeClasses[size]}
+
         ${className}
       `}
     >
@@ -91,15 +91,18 @@ export default function Button({
         <span>Loading...</span>
       ) : (
         <>
-          {leftIcon && <span>{leftIcon}</span>}
+          {buttonType === "icon" ? (
+            // Icon only: support either leftIcon or rightIcon
+            leftIcon || rightIcon
+          ) : (
+            <>
+              {leftIcon && <span>{leftIcon}</span>}
 
-          {buttonType !== "icon" && (
-            <span>{children}</span>
+              <span>{children}</span>
+
+              {rightIcon && <span>{rightIcon}</span>}
+            </>
           )}
-
-          {buttonType === "icon" && leftIcon}
-
-          {rightIcon && <span>{rightIcon}</span>}
         </>
       )}
     </button>
