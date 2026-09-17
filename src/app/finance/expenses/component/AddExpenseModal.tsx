@@ -99,7 +99,8 @@ export default function AddExpenseModal({
     return hasError;
   };
   const submitDetail = async () => {
-    if (!validateForm()) return;
+    if (validateForm()) return;
+    hasSubmit(formState)
   };
   return (
     <Modal

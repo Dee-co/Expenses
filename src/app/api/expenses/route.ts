@@ -8,6 +8,7 @@ export async function GET(request: Request) {
     const page = Number(searchParams.get("page") || 1);
     const limit = Number(searchParams.get("limit") || 10);
     const search = searchParams.get("search") || "";
+    const categoryId = searchParams.get("categoryId") || "";
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const from = (page - 1) * limit;
@@ -20,27 +21,29 @@ export async function GET(request: Request) {
           title,
           amount,
           note,
-          expense_date,
+          created_at,
           bill_url,
           category:categories(id,name)
         `,
         { count: "exact" }
       )
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    if (categoryId) {
+      query = query.eq("category_id", categoryId);
+    }
     if (search) {
       query = query.or(`title.ilike.%${search}%,note.ilike.%${search}%`);
     }
     if (startDate) {
-      query = query.gte("expense_date", startDate);
+      query = query.gte("created_at", startDate);
     }
     if (endDate) {
-      query = query.lte("expense_date", endDate);
+      query = query.lte("created_at", endDate);
     }
-    query = query
-      .order("expense_date", { ascending: false })
-      .range(from, to);
+    query = query.order("created_at", { ascending: false }).range(from, to);
 
-    const { data, error, count } = await query
+    const { data, error, count } = await query;
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
     }
@@ -53,7 +56,6 @@ export async function GET(request: Request) {
         totalPages: Math.ceil((count || 0) / limit),
       },
     });
-
   } catch (error) {
     return Response.json(
       {
@@ -98,7 +100,6 @@ export async function POST(request: Request) {
         user_id: userId,
         category_id,
         note,
-        expense_date: new Date().toISOString().split("T")[0],
         bill_url,
       })
       .select()
@@ -114,11 +115,14 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
+    console.log("getting add error", error);
+    console.log("getting add error", error);
+
     return Response.json(
       {
-        error: error instanceof Error ? error.message : "Unauthorized",
+        error: error instanceof Error ? error.message : "Something went wrong",
       },
-      { status: 401 }
+      { status: 500 }
     );
   }
 }

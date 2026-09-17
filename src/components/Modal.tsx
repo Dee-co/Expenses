@@ -1,6 +1,6 @@
 "use client";
 import { X } from "lucide-react";
-import React, { ReactNode, useEffect } from "react";
+import React, { ReactNode, useEffect, useRef } from "react";
 interface ModalProps {
   open: boolean;
   onClose: () => void;
@@ -10,11 +10,11 @@ interface ModalProps {
   footer?: ReactNode;
   size?: "sm" | "lg" | "md" | "full";
   persist?: boolean;
-  subTitle?:string,
+  subTitle?: string;
   closeButton?: boolean;
   loading?: boolean;
   className?: string;
-  footerClassName?:string
+  footerClassName?: string;
 }
 export default function Modal({
   open,
@@ -29,14 +29,37 @@ export default function Modal({
   closeButton = true,
   loading = false,
   className = "",
-  footerClassName = ""
+  footerClassName = "",
 }: ModalProps) {
+  const modalHistoryRef = useRef(false);
   useEffect(() => {
     if (!open) return;
+    window.history.pushState(
+      {
+        ...window.history.state,
+        modal: true,
+      },
+      "",
+      window.location.href,
+    );
+    modalHistoryRef.current = true;
+    const handlePopState = () => {
+      modalHistoryRef.current = false;
+      onClose();
+    };
 
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) return;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !persist && !loading) {
-        onClose();
+        handleClose();
       }
     };
     document.addEventListener("keydown", handleEscape);
@@ -45,7 +68,7 @@ export default function Modal({
       document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "";
     };
-  }, [open, onClose, persist, loading]);
+  }, [open, persist, loading]);
   if (!open) return null;
   const sizeClasses = {
     sm: "max-w-md",
@@ -53,21 +76,32 @@ export default function Modal({
     lg: "max-w-2xl",
     full: "max-w-none w-full h-full rounded-none",
   };
+  const handleClose = () => {
+    if (loading) return;
+
+    if (modalHistoryRef.current) {
+      modalHistoryRef.current = false;
+      window.history.back();
+      return;
+    }
+
+    onClose();
+  };
   const handleBackdropClick = () => {
     if (!persist && !loading) {
-      onClose();
+      handleClose();
     }
   };
 
   return (
     <div
+      onMouseDown={handleBackdropClick}
       className="
         z-50 flex
         p-4
         bg-black/50
         fixed inset-0 items-center justify-center
       "
-      onMouseDown={handleBackdropClick}
     >
       <div
         role="dialog"
@@ -111,25 +145,30 @@ export default function Modal({
                       {title}
                     </div>
                   )}
-              {subTitle && 
-                <div className="text-muted text-sm">{subTitle}</div>
-              }    
+              {subTitle && (
+                <div
+                  className="
+                    text-muted text-sm
+                  "
+                >
+                  {subTitle}
+                </div>
+              )}
             </div>
 
             {closeButton && (
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 disabled={loading}
                 className="
                   flex
-                  cursor-pointer
                   h-8 w-8
                   ml-4
                   text-text-muted
-                  rounded-lg
-                  hover:border border-primary
-                  shrink-0 items-center justify-center transition hover:bg-background hover:text-text disabled:cursor-not-allowed disabled:opacity-50
+                  rounded-lg border-primary
+                  cursor-pointer
+                  hover:border shrink-0 items-center justify-center transition hover:bg-background hover:text-text disabled:cursor-not-allowed disabled:opacity-50
                 "
               >
                 <X size={20} />
@@ -138,25 +177,23 @@ export default function Modal({
           </div>
         )}
         <div
-          className=
-            {`overflow-y-auto
+          className={`
+            overflow-y-auto
             max-h-[calc(90vh-160px)]
+            px-3
             sm:max-h-[calc(90vh-120px)]
-            px-3`}
-          
+          `}
         >
           {children}
         </div>
         {footer && (
           <div
-            className=
-             { `flex
-              items-center
-              gap-3
-              border
-              border-border
-              px-5
-              py-4 ${footerClassName || 'justify-end'}`}
+            className={`
+              flex
+              px-5 py-4
+              border border-border
+              items-center gap-3 ${footerClassName || "justify-end"}
+            `}
           >
             {footer}
           </div>

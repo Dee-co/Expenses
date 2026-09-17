@@ -17,7 +17,7 @@ const skeletonRecords: Expenses[] = Array.from(
     title: "",
     category: null,
     amount: 0,
-    expense_date: "",
+    created_at: "",
     bill_url: null,
     note: "",
   })
@@ -177,10 +177,10 @@ export default function ExpensesTable({
       sortingFn: (rowA, rowB) => {
         return (
           new Date(
-            rowA.original.expense_date
+            rowA.original.created_at
           ).getTime() -
           new Date(
-            rowB.original.expense_date
+            rowB.original.created_at
           ).getTime()
         );
       },
@@ -190,13 +190,16 @@ export default function ExpensesTable({
           <SkeletonLine width="100px" />
         ) : (
           <span className="text-text-muted">
-            {row.original.expense_date
+            {row.original.created_at
               ? new Date(
-                  row.original.expense_date
+                  row.original.created_at
                 ).toLocaleDateString("en-IN", {
                   day: "2-digit",
                   month: "short",
                   year: "numeric",
+                  hour:"2-digit",
+                  minute:"2-digit",
+                  hour12:true
                 })
               : "-"}
           </span>

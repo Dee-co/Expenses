@@ -6,7 +6,9 @@ import {
   CategoryData,
   CategoryOptions,
   CategoryResponse,
+  CreateExpenseResponse,
   ExpensesResponse,
+  FilterUpdate,
   HandleDetailPayload,
 } from "./component/types";
 import ExpensesTable from "./component/expensesTable";
@@ -14,6 +16,7 @@ import Filters from "./component/filters";
 import Button from "@/components/Button";
 import { Plus } from "lucide-react";
 import AddExpenseModal from "./component/AddExpenseModal";
+import { toast } from "sonner";
 
 export default function Expense() {
   const [loading, setLoading] = useState<Boolean>(false);
@@ -22,16 +25,37 @@ export default function Expense() {
   const [categoryOptions, setCategoryOptions] = useState<
     CategoryOptions[] | null
   >(null);
-  const getExpenses = async () => {
-    setLoading(true);
-    try {
-      const response = await apiService.get<ExpensesResponse>(`/api/expenses`);
-      setExpenses(response);
-    } catch (error) {
-      console.log("getting error", error);
-    } finally {
-      setLoading(false);
+
+const getExpenses = async (data?: FilterUpdate | null) => {
+  setLoading(true);
+
+  try {
+    const params = new URLSearchParams();
+
+    if (data?.selectedCategory) {
+      params.append("categoryId", data.selectedCategory);
     }
+
+    if (data?.title) {
+      params.append("search", data.title);
+    }
+
+    const response = await apiService.get<ExpensesResponse>(
+      `/api/expenses?${params.toString()}`,
+    );
+
+    setExpenses(response);
+  } catch (error) {
+    console.log("getting error", error);
+  } finally {
+    setLoading(false);
+  }
+};
+const handleRefresh = ()=>{
+  getExpenses()
+}
+  const handleUpdateFilter = async (data: FilterUpdate) => {
+    await getExpenses(data);
   };
   const getCategory = async () => {
     try {
@@ -41,17 +65,40 @@ export default function Expense() {
         value: category.id,
       }));
       setCategoryOptions(categoryOptions || null);
-      console.log("getting category option", categoryOptions);
     } catch (error) {
       console.log("getting error", error);
     }
   };
-  const handleSubmit = (detail:HandleDetailPayload)=>{
-    console.log("getting details",detail)
-  }
+  const handleSubmit = async (detail: HandleDetailPayload) => {
+    const formData = new FormData();
+    formData.append("title", detail.title);
+    formData.append("amount", detail.amount);
+    formData.append("category_id", detail.category);
+    if (detail.note) {
+      formData.append("note", detail.note);
+    }
+    if (detail.bill) {
+      formData.append("bill", detail.bill);
+    }
+    try {
+      const result = await apiService.post<CreateExpenseResponse>(
+        "/api/expenses",
+        formData,
+      );
+      console.log("getting response", result);
+      await getExpenses();
+      toast.success("Expense Added");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error ||
+          "Something went wrong. Please try again",
+      );
+    } finally {
+      setOpenModal(false);
+    }
+  };
   useEffect(() => {
     getCategory();
-    getExpenses();
   }, []);
   return (
     <>
@@ -77,7 +124,11 @@ export default function Expense() {
           Add Expense
         </Button>
       </div>
-      <Filters categoryOption={categoryOptions || null} />
+      <Filters
+        categoryOption={categoryOptions || null}
+        onRefresh={handleRefresh}
+        filterUpdate={handleUpdateFilter}
+      />
       <ExpensesTable
         data={expenses?.expenses ?? []}
         pagination={

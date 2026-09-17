@@ -1,15 +1,19 @@
 "use client";
 import CustomSelect from "@/components/CustomSelect";
 import Input from "@/components/Input";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FilterProps } from "./types";
 import Button from "@/components/Button";
 import { RotateCw } from "lucide-react";
 
-export default function Filters({ categoryOption }: FilterProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-
-  const [title, setTitle] = useState("");
+export default function Filters({ categoryOption,onRefresh, filterUpdate }: FilterProps) {
+  const [filters, setFilters] = useState({
+    selectedCategory: "",
+    title: "",
+  });
+  useEffect(() => {
+    filterUpdate(filters);
+  }, [filters]);
   return (
     <div
       className="
@@ -24,10 +28,10 @@ export default function Filters({ categoryOption }: FilterProps) {
       <Input
         name="title"
         placeholder="Search by title"
-        value={title}
+        value={filters.title}
         clearable
         onChange={(e) => {
-          setTitle(e.target.value);
+          setFilters((prev) => ({ ...prev, title: e.target.value }));
         }}
       />
       <CustomSelect
@@ -35,21 +39,27 @@ export default function Filters({ categoryOption }: FilterProps) {
         clearable
         placeholder="Search by category"
         options={categoryOption ? categoryOption : []}
-        value={selectedCategory}
+        value={filters.selectedCategory}
         onChange={(value) => {
           if (typeof value === "string") {
-            setSelectedCategory(value);
+            setFilters((prev) => ({ ...prev, selectedCategory: value }));
           }
         }}
       />
       <div>
         <Button
-        buttonType="icon"
-        size="sm"
-        variant="outline"
-        onClick={() => {}}
-        leftIcon={<RotateCw size={15} />}
-      />
+          buttonType="icon"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            setFilters({
+              selectedCategory: "",
+              title: "",
+            });
+            onRefresh()
+          }}
+          leftIcon={<RotateCw size={15} />}
+        />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 export interface Expenses {
   id: number;
   bill_url: string | null;
-  expense_date: string;
+  created_at: string;
   amount: number;
   note: string;
   title: string;
@@ -33,20 +33,30 @@ export interface CategoryData {
   created_at: string;
   updated_at: string;
 }
-export interface CategoryOptions{
-  label:string;
-  value:string;
+export interface CategoryOptions {
+  label: string;
+  value: string;
 }
-export interface CategoryResponse{
-categories:CategoryData[]
+export interface CategoryResponse {
+  categories: CategoryData[];
 }
-export interface FilterProps{
-  categoryOption:CategoryOptions[] | null
+export interface FilterUpdate{
+  selectedCategory:string | null;
+  title:string | null
 }
-export interface HandleDetailPayload{
-  title:string;
-  amount:string;
-  category:string;
-  bill?:File | null;
-  note?:string
+export interface FilterProps {
+  categoryOption: CategoryOptions[] | null;
+  filterUpdate:(filters:FilterUpdate)=>void;
+  onRefresh:()=>void
+}
+export interface HandleDetailPayload {
+  title: string;
+  amount: string;
+  category: string;
+  bill?: File | null;
+  note?: string;
+}
+export interface CreateExpenseResponse {
+  message: string;
+  expense: Expenses;
 }
