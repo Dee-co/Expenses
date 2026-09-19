@@ -20,7 +20,7 @@ export default function NotiflixProvider() {
     Loading.init({
       svgColor: "var(--app-primary)",
       messageColor: "var(--app-text)",
-      backgroundColor: "var(--app-surface)",
+      backgroundColor: "rgba(15, 23, 42, 0.85)",
       clickToClose: false,
       svgSize: "80px",
       messageFontSize: "15px",

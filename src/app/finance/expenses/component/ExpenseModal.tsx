@@ -13,7 +13,11 @@ interface AddExpenseModalProps {
   onClose: () => void;
   expenseDetail?: null | Expenses;
   categoryOptions: CategoryOptions[] | null;
-  hasSubmit: (detail: HandleDetailPayload) => void;
+  hasSubmit: (
+    detail: HandleDetailPayload,
+    isEdit: boolean,
+    id?: null | number,
+  ) => void;
 }
 interface FooterProps {
   onClose: () => void;
@@ -118,9 +122,20 @@ export default function ExpenseModal({
   };
   const submitDetail = async () => {
     if (validateForm()) return;
-    hasSubmit(formState);
-  };
+    const isEditForm = Boolean(expenseDetail);
+    const formData = {
+      ...formState,
+      billRemoved,
+    };
 
+    console.log("getting data", {
+      billRemoved,
+      formData,
+      expenseDetail,
+    });
+
+    hasSubmit(formData, isEditForm, expenseDetail?.id ?? null);
+  };
   const sortObject = (obj: Record<string, unknown>) => {
     return Object.keys(obj)
       .sort()
@@ -226,7 +241,6 @@ export default function ExpenseModal({
                 }));
               }}
             />
-
             <CustomSelect
               label="Category"
               options={categoryOptions ? categoryOptions : []}
@@ -321,8 +335,6 @@ export default function ExpenseModal({
                   h-full w-full
                 "
               />
-
-              {/* Delete Button - Top Right */}
               <button
                 type="button"
                 onClick={() => {

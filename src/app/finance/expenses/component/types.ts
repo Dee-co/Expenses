@@ -59,6 +59,7 @@ export interface HandleDetailPayload {
   category: string;
   bill?: File | null;
   note?: string;
+  billRemoved?:Boolean
 }
 export interface CreateExpenseResponse {
   message: string;

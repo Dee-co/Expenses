@@ -1,6 +1,4 @@
-"use client";
-
-import { apiService } from "@/services/apiService";
+"use client";import { apiService } from "@/services/apiService";
 import { useEffect, useState } from "react";
 import {
   CategoryData,
@@ -19,7 +17,7 @@ import { Plus, ScanText } from "lucide-react";
 import ExpenseModal from "./component/ExpenseModal";
 import { toast } from "sonner";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
-import { Loading } from "notiflix";
+import { Loading } from "notiflix/build/notiflix-loading-aio";
 export default function Expense() {
   const [loading, setLoading] = useState<Boolean>(false);
   const [expenses, setExpenses] = useState<ExpensesResponse | null>(null);
@@ -27,9 +25,7 @@ export default function Expense() {
   const [editExpenseData, setEditExpenseData] = useState<Expenses | null>(null);
   const [categoryOptions, setCategoryOptions] = useState<
     CategoryOptions[] | null
-  >(null);
-
-  const getExpenses = async (data?: FilterUpdate | null) => {
+  >(null);  const getExpenses = async (data?: FilterUpdate | null) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -67,25 +63,37 @@ export default function Expense() {
       console.log("getting error", error);
     }
   };
-  const handleSubmit = async (detail: HandleDetailPayload) => {
+  const handleSubmit = async (detail: HandleDetailPayload, isEdit = false,id?:number | null) => {
+    console.log("getting details", detail, isEdit);
     const formData = new FormData();
     formData.append("title", detail.title);
     formData.append("amount", detail.amount);
     formData.append("category_id", detail.category);
+    if(detail.billRemoved){
+      formData.append("billRemoved",String(detail.billRemoved??false))
+    }
     if (detail.note) {
       formData.append("note", detail.note);
     }
     if (detail.bill) {
       formData.append("bill", detail.bill);
     }
+    Loading.standard(isEdit?'Updating expense...':'Adding expense...')
     try {
-      const result = await apiService.post<CreateExpenseResponse>(
-        "/api/expenses",
-        formData,
-      );
-      console.log("getting response", result);
+      let result;
+      if (isEdit) {
+        result = await apiService.patch<CreateExpenseResponse>(
+          `/api/expenses/${id}`,
+          formData,
+        );
+      } else {
+        result = await apiService.post<CreateExpenseResponse>(
+          "/api/expenses",
+          formData,
+        );
+      }
       await getExpenses();
-      toast.success("Expense Added");
+      toast.success(isEdit?"Expense Updated":"Expense Added");
     } catch (error: any) {
       toast.error(
         error?.response?.data?.error ||
@@ -93,6 +101,7 @@ export default function Expense() {
       );
     } finally {
       setOpenModal(false);
+      Loading.remove()
     }
   };
   const handleDelete = (data: any) => {
@@ -141,7 +150,6 @@ export default function Expense() {
             Track and manage your daily expenses
           </p>
         </div>
-
         <div
           className="
             flex
