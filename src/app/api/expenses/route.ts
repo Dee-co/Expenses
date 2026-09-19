@@ -13,49 +13,64 @@ export async function GET(request: Request) {
     const endDate = searchParams.get("endDate");
     const from = (page - 1) * limit;
     const to = from + limit - 1;
-    let query = supabaseAdmin
-      .from("expenses")
-      .select(
-        `
-          id,
+
+    const applyFilters = (query: any) => {
+      query = query.eq("user_id", userId);
+      if (categoryId) {
+        query = query.eq("category_id", categoryId);
+      }
+      if (search) {
+        query = query.or(`title.like.%${search}%,note.like.%${search}%`);
+      }
+      if (startDate) {
+        query = query.gte("create_at", startDate);
+      }
+      if (endDate) {
+        query = query.lte("create_at", endDate);
+      }
+      return query;
+    };
+    let query = applyFilters(
+      supabaseAdmin.from("expenses").select(
+        `id,
           title,
+          category:categories(id,name),
           amount,
           note,
-          created_at,
           bill_url,
-          category:categories(id,name)
-        `,
+          created_at`,
         { count: "exact" }
       )
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-    if (categoryId) {
-      query = query.eq("category_id", categoryId);
-    }
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,note.ilike.%${search}%`);
-    }
-    if (startDate) {
-      query = query.gte("created_at", startDate);
-    }
-    if (endDate) {
-      query = query.lte("created_at", endDate);
-    }
+    );
     query = query.order("created_at", { ascending: false }).range(from, to);
-
-    const { data, error, count } = await query;
+    const totalAmountQuery = applyFilters(
+      supabaseAdmin.from("expenses").select("amount")
+    );
+    const [{ data, error, count }, { data: totalData, error: totalError }] =
+      await Promise.all([query, totalAmountQuery]);
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
     }
-    return Response.json({
-      expenses: data,
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
+    if (totalError) {
+      return Response.json({ error: totalError?.message }, { status: 500 });
+    }
+    const totalAmount = (totalData ?? []).reduce(
+      (sum: any, expense: any) => sum + Number(expense.amount),
+      0
+    );
+    return Response.json(
+      {
+        expenses: data ?? [],
+        totalAmount,
+        pagination: {
+          page,
+          limit,
+          total: count ?? 0,
+          totalPages: Math.ceil((count ?? 0) / limit),
+        },
       },
-    });
+      { status: 200 }
+    );
   } catch (error) {
     return Response.json(
       {

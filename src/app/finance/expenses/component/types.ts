@@ -20,12 +20,16 @@ export interface Pagination {
 export interface ExpensesTableProps {
   data: Expenses[];
   loader: Boolean;
+  totalAmount:number;
   pagination: Pagination;
+  onEdit:(data:Expenses)=>void;
+  onDelete:(data:Expenses)=>void;
   onPageChange: (page: number) => void;
 }
 export interface ExpensesResponse {
   expenses: Expenses[];
   pagination: Pagination;
+  totalAmount:number
 }
 export interface CategoryData {
   id: string;

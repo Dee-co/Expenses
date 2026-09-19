@@ -148,7 +148,7 @@ export default function Modal({
               {subTitle && (
                 <div
                   className="
-                    text-muted text-sm
+                    text-text text-sm
                   "
                 >
                   {subTitle}

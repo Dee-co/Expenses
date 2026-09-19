@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import UserInitializer from "@/components/UserInitializer";
+import NotiflixProvider from "@/components/NotiflixProvider";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({
         "
       >
         <UserInitializer/>
+        <NotiflixProvider/>
         {children}
         <Toaster position="top-right" richColors closeButton />
       </body>

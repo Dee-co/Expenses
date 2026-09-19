@@ -92,7 +92,6 @@ export default function Button({
       ) : (
         <>
           {buttonType === "icon" ? (
-            // Icon only: support either leftIcon or rightIcon
             leftIcon || rightIcon
           ) : (
             <>

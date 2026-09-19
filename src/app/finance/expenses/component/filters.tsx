@@ -7,10 +7,19 @@ import Button from "@/components/Button";
 import { RotateCw } from "lucide-react";
 
 export default function Filters({ categoryOption,onRefresh, filterUpdate }: FilterProps) {
+  const [title,setTitle]= useState("")
   const [filters, setFilters] = useState({
     selectedCategory: "",
     title: "",
   });
+  useEffect(()=>{
+    const timer = setTimeout(()=>{
+      setFilters((prev)=>({...prev,title}))
+    },500)
+    return()=>{
+      clearTimeout(timer)
+    }
+  },[title])
   useEffect(() => {
     filterUpdate(filters);
   }, [filters]);
@@ -28,10 +37,10 @@ export default function Filters({ categoryOption,onRefresh, filterUpdate }: Filt
       <Input
         name="title"
         placeholder="Search by title"
-        value={filters.title}
+        value={title}
         clearable
         onChange={(e) => {
-          setFilters((prev) => ({ ...prev, title: e.target.value }));
+          setTitle(e.target.value)
         }}
       />
       <CustomSelect
