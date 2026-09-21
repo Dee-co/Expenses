@@ -1,4 +1,5 @@
-"use client";import { apiService } from "@/services/apiService";
+"use client";
+import { apiService } from "@/services/apiService";
 import { useEffect, useState } from "react";
 import {
   CategoryData,
@@ -9,6 +10,7 @@ import {
   ExpensesResponse,
   FilterUpdate,
   HandleDetailPayload,
+  ScanFormData,
 } from "./component/types";
 import ExpensesTable from "./component/expensesTable";
 import Filters from "./component/filters";
@@ -18,14 +20,63 @@ import ExpenseModal from "./component/ExpenseModal";
 import { toast } from "sonner";
 import { Confirm } from "notiflix/build/notiflix-confirm-aio";
 import { Loading } from "notiflix/build/notiflix-loading-aio";
+import ScanBillModal from "./component/ScanBillModal";
+import { extractBillText } from "@/lib/ocr";
+import ExpensesCard from "./component/ExpensesCard";
 export default function Expense() {
   const [loading, setLoading] = useState<Boolean>(false);
   const [expenses, setExpenses] = useState<ExpensesResponse | null>(null);
   const [openModal, setOpenModal] = useState<boolean>(false);
+  const [openScanBillModal, setOpenScanBillModal] = useState(false);
+  const [scanFormData, setScanFormData] = useState<ScanFormData | null>(null);
   const [editExpenseData, setEditExpenseData] = useState<Expenses | null>(null);
   const [categoryOptions, setCategoryOptions] = useState<
     CategoryOptions[] | null
-  >(null);  const getExpenses = async (data?: FilterUpdate | null) => {
+  >(null);
+  const handleScanBill = async (file: File) => {
+    Loading.standard("Extracting bill text...");
+
+    try {
+      const extractedText = await extractBillText(file);
+
+      console.log("OCR Text:", extractedText);
+      if (!extractedText.trim()) {
+        toast.error("Unable to extract text from bill");
+        return;
+      }
+      Loading.change("Analyzing bill with AI...");
+      const response = await apiService.post<any>("/api/ai/analyze-bill", {
+        text: extractedText,
+      });
+
+      const data = response?.data || response;
+      console.log("Parsed JSON:", data);
+      const categoryId = categoryOptions?.find(
+        (category) =>
+          category.label.toLowerCase() === data.category?.toLowerCase(),
+      )?.value;
+      const scannedData: ScanFormData = {
+        title: data.title || "Grocery Shopping",
+        amount:
+          data.amount !== null && data.amount !== undefined
+            ? String(data.amount)
+            : "",
+        category: categoryId || "",
+        note: data.note || "",
+        bill: file,
+      };
+      setScanFormData(scannedData);
+      setOpenScanBillModal(false);
+      setOpenModal(true);
+      toast.success("Bill scanned successfully");
+    } catch (error: any) {
+      console.error("Bill scanning error:", error);
+      toast.error(error?.response?.data?.error || "Unable to analyze bill");
+    } finally {
+      Loading.remove();
+    }
+  };
+  const getExpenses = async (data?: FilterUpdate | null) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -63,14 +114,18 @@ export default function Expense() {
       console.log("getting error", error);
     }
   };
-  const handleSubmit = async (detail: HandleDetailPayload, isEdit = false,id?:number | null) => {
+  const handleSubmit = async (
+    detail: HandleDetailPayload,
+    isEdit = false,
+    id?: number | null,
+  ) => {
     console.log("getting details", detail, isEdit);
     const formData = new FormData();
     formData.append("title", detail.title);
     formData.append("amount", detail.amount);
     formData.append("category_id", detail.category);
-    if(detail.billRemoved){
-      formData.append("billRemoved",String(detail.billRemoved??false))
+    if (detail.billRemoved) {
+      formData.append("billRemoved", String(detail.billRemoved ?? false));
     }
     if (detail.note) {
       formData.append("note", detail.note);
@@ -78,7 +133,7 @@ export default function Expense() {
     if (detail.bill) {
       formData.append("bill", detail.bill);
     }
-    Loading.standard(isEdit?'Updating expense...':'Adding expense...')
+    Loading.standard(isEdit ? "Updating expense..." : "Adding expense...");
     try {
       let result;
       if (isEdit) {
@@ -93,7 +148,7 @@ export default function Expense() {
         );
       }
       await getExpenses();
-      toast.success(isEdit?"Expense Updated":"Expense Added");
+      toast.success(isEdit ? "Expense Updated" : "Expense Added");
     } catch (error: any) {
       toast.error(
         error?.response?.data?.error ||
@@ -101,7 +156,7 @@ export default function Expense() {
       );
     } finally {
       setOpenModal(false);
-      Loading.remove()
+      Loading.remove();
     }
   };
   const handleDelete = (data: any) => {
@@ -161,7 +216,9 @@ export default function Expense() {
             buttonType="icon-text"
             leftIcon={<ScanText size={18} />}
             onClick={() => {
-              setOpenModal(true);
+              setScanFormData(null);
+              setEditExpenseData(null);
+              setOpenScanBillModal(true);
             }}
             className="
               w-full
@@ -195,33 +252,75 @@ export default function Expense() {
         onRefresh={handleRefresh}
         filterUpdate={handleUpdateFilter}
       />
-      <ExpensesTable
-        data={expenses?.expenses ?? []}
-        pagination={
-          expenses?.pagination ?? {
-            page: 1,
-            limit: 10,
-            total: 0,
-            totalPages: 0,
+      <div
+        className="
+          block
+          md:hidden
+        "
+      >
+        <ExpensesCard
+          data={expenses?.expenses ?? []}
+          pagination={
+            expenses?.pagination ?? {
+              page: 1,
+              limit: 10,
+              total: 0,
+              totalPages: 0,
+            }
           }
-        }
-        onDelete={handleDelete}
-        onEdit={(data) => {
-          setEditExpenseData(data || null);
+          onDelete={handleDelete}
+          onEdit={(data) => {
+            setEditExpenseData(data || null);
+            setOpenModal(true);
+          }}
+          totalAmount={expenses?.totalAmount ?? 0}
+          loader={loading}
+          onPageChange={(page) => {
+            console.log("change page", page);
+          }}
+        />
+      </div>
+      <div className="hidden md:block">
+        <ExpensesTable
+          data={expenses?.expenses ?? []}
+          pagination={
+            expenses?.pagination ?? {
+              page: 1,
+              limit: 10,
+              total: 0,
+              totalPages: 0,
+            }
+          }
+          onDelete={handleDelete}
+          onEdit={(data) => {
+            setEditExpenseData(data || null);
+            setOpenModal(true);
+          }}
+          totalAmount={expenses?.totalAmount ?? 0}
+          loader={loading}
+          onPageChange={(page) => {
+            console.log("change page", page);
+          }}
+        />
+      </div>
+      <ScanBillModal
+        openModal={openScanBillModal}
+        onClose={() => setOpenScanBillModal(false)}
+        onManualAdd={() => {
+          setScanFormData(null);
+          setOpenScanBillModal(false);
           setOpenModal(true);
         }}
-        totalAmount={expenses?.totalAmount ?? 0}
-        loader={loading}
-        onPageChange={(page) => {
-          console.log("change page", page);
-        }}
+        onScanBill={handleScanBill}
       />
       <ExpenseModal
-        categoryOptions={categoryOptions ? categoryOptions : null}
+        categoryOptions={categoryOptions || []}
         openModal={openModal}
         expenseDetail={editExpenseData}
+        prefillData={scanFormData}
         hasSubmit={handleSubmit}
         onClose={() => {
+          setScanFormData(null);
           setEditExpenseData(null);
           setOpenModal(false);
         }}

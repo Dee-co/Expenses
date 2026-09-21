@@ -1,5 +1,6 @@
 import { authenticateRequest } from "@/lib/auth";
 import cloudinary from "@/lib/cloudinary";
+import { uploadBufferToCloudinary } from "@/lib/cloudinaryHelpers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export async function GET(request: Request) {
   try {
@@ -23,10 +24,10 @@ export async function GET(request: Request) {
         query = query.or(`title.like.%${search}%,note.like.%${search}%`);
       }
       if (startDate) {
-        query = query.gte("create_at", startDate);
+        query = query.gte("created_at", startDate);
       }
       if (endDate) {
-        query = query.lte("create_at", endDate);
+        query = query.lte("created_at", endDate);
       }
       return query;
     };
@@ -84,60 +85,90 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { userId } = authenticateRequest(request);
+
     const formData = await request.formData();
-    const file = formData.get("bill") as File | null;
+
+    const file = formData.get("bill");
     const title = formData.get("title") as string;
     const amount = formData.get("amount") as string;
     const category_id = formData.get("category_id") as string;
-    const note = formData.get("note") as string;
+    const note = (formData.get("note") as string) || "";
+
     if (!title || !amount || !category_id) {
       return Response.json(
-        { error: "Title, amount and category are required" },
-        { status: 400 }
-      );
-    }
-    let bill_url = null;
-    if (file) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const result = await cloudinary.uploader.upload(
-        `data:${file.type};base64,${buffer.toString("base64")}`,
         {
-          folder: `expenses_bill/${userId}`,
-        }
+          error: "Title, amount and category are required",
+        },
+        { status: 400 },
       );
+    }
+
+    let bill_url: string | null = null;
+
+    // Upload bill without converting to base64
+    if (file instanceof File && file.size > 0) {
+      console.log("Bill upload started:", {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      });
+
+      const buffer = Buffer.from(await file.arrayBuffer());
+
+      const result = await uploadBufferToCloudinary(
+        buffer,
+        `expenses_bill/${userId}`,
+      );
+
       bill_url = result.secure_url;
+
+      console.log("Bill uploaded successfully");
     }
-    const { data: expense, error: expenseError } = await supabaseAdmin
-      .from("expenses")
-      .insert({
-        title,
-        amount: Number(amount),
-        user_id: userId,
-        category_id,
-        note,
-        bill_url,
-      })
-      .select()
-      .single();
+
+    const { data: expense, error: expenseError } =
+      await supabaseAdmin
+        .from("expenses")
+        .insert({
+          title,
+          amount: Number(amount),
+          user_id: userId,
+          category_id,
+          note,
+          bill_url,
+        })
+        .select()
+        .single();
+
     if (expenseError) {
-      return Response.json({ error: expenseError.message }, { status: 500 });
+      console.error("Supabase insert error:", expenseError);
+
+      return Response.json(
+        { error: expenseError.message },
+        { status: 500 },
+      );
     }
+
     return Response.json(
       {
         message: "Expense created successfully",
         expense,
       },
-      { status: 201 }
+      { status: 201 },
     );
-  } catch (error) {
-    console.log("getting add error", error);
-    console.log("getting add error", error);
+  } catch (error: any) {
+    console.error("ADD EXPENSE ERROR:", {
+      message: error?.message,
+      code: error?.code,
+      errno: error?.errno,
+      syscall: error?.syscall,
+      stack: error?.stack,
+    });
 
     return Response.json(
       {
-        error: error instanceof Error ? error.message : "Something went wrong",
+        error: error?.message || "Something went wrong",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

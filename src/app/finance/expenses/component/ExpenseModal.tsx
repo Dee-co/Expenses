@@ -8,11 +8,20 @@ import Textarea from "@/components/TextArea";
 import React, { useEffect, useMemo, useState } from "react";
 import { CategoryOptions, Expenses, HandleDetailPayload } from "./types";
 import { RotateCcw, Trash2 } from "lucide-react";
-interface AddExpenseModalProps {
+interface ExpenseModalProps {
   openModal: boolean;
   onClose: () => void;
   expenseDetail?: null | Expenses;
   categoryOptions: CategoryOptions[] | null;
+
+  prefillData?: {
+    title: string;
+    category: string;
+    amount: string;
+    note: string;
+    bill: File | null;
+  } | null;
+
   hasSubmit: (
     detail: HandleDetailPayload,
     isEdit: boolean,
@@ -69,12 +78,13 @@ function Footer({
 }
 
 export default function ExpenseModal({
-  openModal,
+   openModal,
   onClose,
   expenseDetail = null,
   categoryOptions,
+  prefillData = null,
   hasSubmit,
-}: AddExpenseModalProps) {
+}: ExpenseModalProps) {
   const [formState, setFormState] = useState({
     title: "",
     category: "",
@@ -168,32 +178,62 @@ export default function ExpenseModal({
     return formChanged || billChanged;
   }, [formState, initialFormState, billRemoved, expenseDetail]);
   useEffect(() => {
-    if (!openModal) return;
-    const initialData = expenseDetail
-      ? {
-          title: expenseDetail.title || "",
-          category: expenseDetail.category?.id || "",
-          amount: String(expenseDetail.amount || ""),
-          note: expenseDetail.note || "",
-        }
-      : {
-          title: "",
-          category: "",
-          amount: "",
-          note: "",
-        };
+  if (!openModal) return;
+
+  // Scanned bill data for new expense
+  if (!expenseDetail && prefillData) {
+    const initialData = {
+      title: prefillData.title || "",
+      category: prefillData.category || "",
+      amount: prefillData.amount || "",
+      note: prefillData.note || "",
+    };
+
     setFormState({
       ...initialData,
-      bill: null,
+      bill: prefillData.bill || null,
     });
+
     setInitialFormState(initialData);
     setBillRemoved(false);
+
     setErrorForm({
       title: "",
       amount: "",
       category: "",
     });
-  }, [openModal, expenseDetail]);
+
+    return;
+  }
+
+  const initialData = expenseDetail
+    ? {
+        title: expenseDetail.title || "",
+        category: expenseDetail.category?.id || "",
+        amount: String(expenseDetail.amount || ""),
+        note: expenseDetail.note || "",
+      }
+    : {
+        title: "",
+        category: "",
+        amount: "",
+        note: "",
+      };
+
+  setFormState({
+    ...initialData,
+    bill: null,
+  });
+
+  setInitialFormState(initialData);
+  setBillRemoved(false);
+
+  setErrorForm({
+    title: "",
+    amount: "",
+    category: "",
+  });
+}, [openModal, expenseDetail, prefillData]);
   return (
     <Modal
       open={openModal}

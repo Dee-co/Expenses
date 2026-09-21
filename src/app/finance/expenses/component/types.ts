@@ -59,9 +59,24 @@ export interface HandleDetailPayload {
   category: string;
   bill?: File | null;
   note?: string;
-  billRemoved?:Boolean
+  billRemoved?:boolean
 }
 export interface CreateExpenseResponse {
   message: string;
   expense: Expenses;
+}
+
+export interface ScanBillProps {
+  openModal: boolean;
+  onClose: () => void;
+  onManualAdd: () => void;
+  onScanBill: (file: File) => void;
+}
+
+export interface ScanFormData {
+  title: string;
+  amount: string;
+  category: string;
+  note: string;
+  bill: File | null;
 }

@@ -1,42 +1,56 @@
 import cloudinary from "@/lib/cloudinary";
 import type { UploadApiResponse } from "cloudinary";
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const wait = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function uploadBufferToCloudinary(
   buffer: Buffer,
   folder: string,
-  retries = 2
+  retries = 2,
 ): Promise<UploadApiResponse> {
   const attemptUpload = () =>
     new Promise<UploadApiResponse>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_chunked_stream(
+      const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder,
           resource_type: "image",
-          chunk_size: 1024 * 1024,
+          timeout: 120000,
         },
         (error, result) => {
           if (error || !result) {
-            return reject(error ?? new Error("Empty Cloudinary response"));
+            reject(error ?? new Error("Empty Cloudinary response"));
+            return;
           }
+
           resolve(result);
-        }
+        },
       );
-      stream.on("error", reject);
-      stream.end(buffer);
+
+      uploadStream.on("error", reject);
+      uploadStream.end(buffer);
     });
+
   let lastError: unknown;
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       return await attemptUpload();
     } catch (error) {
       lastError = error;
-      console.error(`Cloudinary upload attempt ${attempt + 1} failed:`, error);
+
+      console.error(
+        `Cloudinary upload attempt ${attempt + 1} failed:`,
+        error,
+      );
+
       if (attempt < retries) {
         await wait(1000 * (attempt + 1));
       }
     }
   }
-  throw lastError;
+
+  throw lastError ?? new Error("Cloudinary upload failed");
 }
 export function getPublicIdFromUrl(fileUrl: string): string | null {
   try {
