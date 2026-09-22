@@ -21,6 +21,7 @@ export interface ExpensesTableProps {
   data: Expenses[];
   loader: Boolean;
   totalAmount:number;
+  loadingMore?: boolean;
   pagination: Pagination;
   onEdit:(data:Expenses)=>void;
   onDelete:(data:Expenses)=>void;

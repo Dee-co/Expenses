@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Edit2,
   Trash2,
@@ -15,35 +15,40 @@ import {
 import { ExpensesTableProps, Expenses } from "./types";
 import Button from "@/components/Button";
 
-const skeletonRecords: Expenses[] = Array.from(
-  { length: 6 },
-  (_, index) => ({
-    id: index + 1,
-    title: "",
-    category: null,
-    amount: 0,
-    created_at: "",
-    bill_url: null,
-    note: "",
-  }),
-);
+const skeletonRecords: Expenses[] = Array.from({ length: 6 }, (_, index) => ({
+  id: index + 1,
+  title: "",
+  category: null,
+  amount: 0,
+  created_at: "",
+  bill_url: null,
+  note: "",
+}));
 
-function SkeletonLine({
-  width = "70%",
-}: {
-  width?: string;
-}) {
+function SkeletonLine({ width = "70%" }: { width?: string }) {
   return (
     <div
       style={{ width }}
-      className="h-3 animate-pulse rounded-md bg-border"
+      className="
+        h-3
+        bg-border
+        rounded-md
+        animate-pulse
+      "
     />
   );
 }
 
 function SkeletonBox() {
   return (
-    <div className="h-9 w-9 animate-pulse rounded-lg bg-border" />
+    <div
+      className="
+        h-9 w-9
+        bg-border
+        rounded-lg
+        animate-pulse
+      "
+    />
   );
 }
 
@@ -52,7 +57,9 @@ function NoExpensesIcon() {
     <ReceiptText
       size={34}
       strokeWidth={1.5}
-      className="text-text-muted"
+      className="
+        text-text-muted
+      "
     />
   );
 }
@@ -67,32 +74,89 @@ export default function ExpensesCard({
   onDelete,
 }: ExpensesTableProps) {
   const records = loader ? skeletonRecords : data;
-
   const isEmpty = !loader && data.length === 0;
-
+  const cardRef = useRef<HTMLDivElement>(null);
+  const requestedPageRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!loader) {
+      requestedPageRef.current = null;
+    }
+  }, [loader]);
+  useEffect(() => {
+  if (pagination.page === 1 && !loader) {
+    cardRef.current?.scrollTo({
+      top: 0,
+      behavior: "auto",
+    });
+  }
+}, [pagination.page, loader]);
+  useEffect(() => {
+    if (pagination.page === 1) {
+      requestedPageRef.current = null;
+    } else {
+      requestedPageRef.current = pagination.page;
+    }
+  }, [pagination.page]);
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    const handleScroll = () => {
+      if (loader) return;
+      const { clientHeight, scrollHeight, scrollTop } = card;
+      const isNearBottom = scrollTop + clientHeight + 120 >= scrollHeight;
+      const hasNextPage = pagination.page < pagination.totalPages;
+      const nextPage = pagination.page + 1;
+      if (!isNearBottom || !hasNextPage) return;
+      if (requestedPageRef.current === nextPage) return;
+      requestedPageRef.current = nextPage;
+      onPageChange(nextPage);
+    };
+    card.addEventListener("scroll", handleScroll);
+    return () => {
+      card.removeEventListener("scroll", handleScroll);
+    };
+  }, [loader, pagination.page, pagination.totalPages, onPageChange]);
   if (isEmpty) {
     return (
       <div
         className="
-          flex min-h-75 flex-col items-center justify-center
-          rounded-2xl border border-border bg-surface
-          px-6 py-12 text-center shadow-sm
+          flex flex-col
+          min-h-75
+          px-6 py-12
+          text-center
+          bg-surface
+          rounded-2xl border border-border
+          shadow-sm
+          items-center justify-center
         "
       >
         <div
           className="
-            mb-3 flex h-12 w-12 items-center justify-center
-            rounded-full bg-primary/5
+            flex
+            h-12 w-12
+            mb-3
+            bg-primary/5
+            rounded-full
+            items-center justify-center
           "
         >
           <NoExpensesIcon />
         </div>
 
-        <p className="text-sm font-semibold text-text">
+        <p
+          className="
+            text-sm font-semibold text-text
+          "
+        >
           No expenses found
         </p>
 
-        <p className="mt-1 text-xs text-text-muted">
+        <p
+          className="
+            mt-1
+            text-xs text-text-muted
+          "
+        >
           Your expenses will appear here.
         </p>
       </div>
@@ -102,48 +166,88 @@ export default function ExpensesCard({
   return (
     <div
       className="
-        flex flex-col overflow-hidden
+        flex flex-col
+        h-[calc(100vh-250px)]
+        bg-surface
         rounded-2xl border border-border
-        bg-surface shadow-sm
+        shadow-sm
       "
     >
-      {/* Cards */}
-      <div className="flex flex-col gap-3 p-3 sm:p-4">
+      <div
+        ref={cardRef}
+        className="
+          flex flex-1 flex-col overflow-auto
+          min-h-0
+          p-3
+          gap-3
+          sm:p-4
+        "
+      >
         {records.map((expense) => {
-          const date = expense.created_at
-            ? new Date(expense.created_at)
-            : null;
+          const date = expense.created_at ? new Date(expense.created_at) : null;
 
           return (
             <div
               key={expense.id}
               className="
-                group rounded-2xl border border-border
-                bg-background/30 p-4
-                transition-all duration-200
-                hover:border-primary/40 hover:shadow-sm
+                p-4
+                bg-background/30
+                rounded-2xl border border-border
+                transition-all
+                group duration-200 hover:border-primary/40 hover:shadow-sm
               "
             >
               {/* Header */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-3">
+              <div
+                className="
+                  flex
+                  items-start justify-between gap-3
+                "
+              >
+                <div
+                  className="
+                    flex
+                    min-w-0
+                    items-start gap-3
+                  "
+                >
                   <div
                     className="
-                      flex h-11 w-11 shrink-0 items-center
-                      justify-center rounded-xl
-                      bg-primary/10 text-primary
+                      flex
+                      h-11 w-11
+                      text-primary
+                      bg-primary/10
+                      rounded-xl
+                      shrink-0 items-center justify-center
                     "
                   >
                     {loader ? (
-                      <div className="h-5 w-5 animate-pulse rounded bg-border" />
+                      <div
+                        className="
+                          h-5 w-5
+                          bg-border
+                          animate-pulse
+                          rounded
+                        "
+                      />
                     ) : (
                       <Wallet size={20} />
                     )}
                   </div>
 
-                  <div className="min-w-0 flex-1">
+                  <div
+                    className="
+                      flex-1
+                      min-w-0
+                    "
+                  >
                     {loader ? (
-                      <div className="flex flex-col gap-2">
+                      <div
+                        className="
+                          flex flex-col
+                          gap-2
+                        "
+                      >
                         <SkeletonLine width="140px" />
                         <SkeletonLine width="190px" />
                       </div>
@@ -152,8 +256,8 @@ export default function ExpensesCard({
                         <h3
                           title={expense.title}
                           className="
-                            truncate text-sm font-semibold
-                            capitalize text-text
+                            text-sm font-semibold text-text
+                            truncate capitalize
                           "
                         >
                           {expense.title}
@@ -162,8 +266,9 @@ export default function ExpensesCard({
                         <p
                           title={expense.note || "No notes added"}
                           className="
-                            mt-1 line-clamp-2 text-xs
-                            leading-relaxed text-text-muted
+                            mt-1
+                            text-xs leading-relaxed text-text-muted
+                            line-clamp-2
                           "
                         >
                           {expense.note || "No notes added"}
@@ -174,23 +279,34 @@ export default function ExpensesCard({
                 </div>
 
                 {/* Amount */}
-                <div className="shrink-0 text-right">
+                <div
+                  className="
+                    text-right
+                    shrink-0
+                  "
+                >
                   {loader ? (
                     <SkeletonLine width="85px" />
                   ) : (
                     <>
-                      <p className="text-base font-bold text-primary">
+                      <p
+                        className="
+                          text-base font-bold text-primary
+                        "
+                      >
                         ₹
-                        {Number(expense.amount).toLocaleString(
-                          "en-IN",
-                          {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          },
-                        )}
+                        {Number(expense.amount).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </p>
 
-                      <p className="mt-1 text-[10px] text-text-muted">
+                      <p
+                        className="
+                          mt-1
+                          text-[10px] text-text-muted
+                        "
+                      >
                         Amount
                       </p>
                     </>
@@ -201,21 +317,30 @@ export default function ExpensesCard({
               {/* Details */}
               <div
                 className="
-                  mt-4 flex flex-wrap items-center
-                  justify-between gap-3
-                  border-t border-border pt-3
+                  flex flex-wrap
+                  mt-4 pt-3
+                  border-t border-border
+                  items-center justify-between gap-3
                 "
               >
                 {/* Category */}
                 {loader ? (
-                  <div className="h-7 w-20 animate-pulse rounded-full bg-border" />
+                  <div
+                    className="
+                      h-7 w-20
+                      bg-border
+                      rounded-full
+                      animate-pulse
+                    "
+                  />
                 ) : (
                   <span
                     className="
-                      inline-flex whitespace-nowrap
-                      rounded-full bg-primary/10
-                      px-3 py-1.5 text-xs font-medium
-                      text-primary
+                      inline-flex
+                      px-3 py-1.5
+                      whitespace-nowrap text-xs font-medium text-primary
+                      bg-primary/10
+                      rounded-full
                     "
                   >
                     {expense.category?.name || "Other"}
@@ -224,23 +349,49 @@ export default function ExpensesCard({
 
                 {/* Date */}
                 {loader ? (
-                  <div className="flex flex-col gap-2">
+                  <div
+                    className="
+                      flex flex-col
+                      gap-2
+                    "
+                  >
                     <SkeletonLine width="105px" />
                     <SkeletonLine width="75px" />
                   </div>
                 ) : !date ? (
-                  <span className="text-xs text-text-muted">
+                  <span
+                    className="
+                      text-xs text-text-muted
+                    "
+                  >
                     -
                   </span>
                 ) : (
-                  <div className="flex items-start gap-2">
+                  <div
+                    className="
+                      flex
+                      items-start gap-2
+                    "
+                  >
                     <CalendarDays
                       size={15}
-                      className="mt-0.5 text-text-muted"
+                      className="
+                        mt-0.5
+                        text-text-muted
+                      "
                     />
 
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-medium text-text">
+                    <div
+                      className="
+                        flex flex-col
+                        gap-0.5
+                      "
+                    >
+                      <span
+                        className="
+                          text-xs font-medium text-text
+                        "
+                      >
                         {date.toLocaleDateString("en-IN", {
                           day: "2-digit",
                           month: "short",
@@ -248,7 +399,11 @@ export default function ExpensesCard({
                         })}
                       </span>
 
-                      <span className="text-[11px] text-text-muted">
+                      <span
+                        className="
+                          text-[11px] text-text-muted
+                        "
+                      >
                         {date.toLocaleTimeString("en-IN", {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -263,8 +418,10 @@ export default function ExpensesCard({
               {/* Bottom Actions */}
               <div
                 className="
-                  mt-3 flex items-center justify-between
-                  border-t border-border pt-3
+                  flex
+                  mt-3 pt-3
+                  border-t border-border
+                  items-center justify-between
                 "
               >
                 {/* Bill */}
@@ -277,55 +434,71 @@ export default function ExpensesCard({
                     rel="noopener noreferrer"
                     title="View bill"
                     className="
-                      group/bill relative flex h-10 w-10
-                      overflow-hidden rounded-lg
-                      border border-border
+                      flex overflow-hidden
+                      h-10 w-10
+                      rounded-lg border border-border
+                      group/bill relative
                     "
                   >
                     <img
                       src={expense.bill_url}
                       alt="Expense bill"
                       className="
-                        h-full w-full object-cover
-                        transition-transform duration-200
-                        group-hover/bill:scale-110
+                        object-cover
+                        h-full w-full
+                        transition-transform
+                        duration-200 group-hover/bill:scale-110
                       "
                     />
 
                     <span
                       className="
-                        absolute inset-0 flex items-center
-                        justify-center bg-black/40
-                        text-white opacity-0
-                        transition-opacity
-                        group-hover/bill:opacity-100
+                        flex
+                        text-white
+                        bg-black/40
+                        opacity-0 transition-opacity
+                        absolute inset-0 items-center justify-center group-hover/bill:opacity-100
                       "
                     >
                       <ExternalLink size={14} />
                     </span>
                   </a>
                 ) : (
-                  <span className="text-xs text-text-muted">
+                  <span
+                    className="
+                      text-xs text-text-muted
+                    "
+                  >
                     No Bill
                   </span>
                 )}
 
                 {/* Actions */}
                 {loader ? (
-                  <div className="flex gap-2">
+                  <div
+                    className="
+                      flex
+                      gap-2
+                    "
+                  >
                     <SkeletonBox />
                     <SkeletonBox />
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <div
+                    className="
+                      flex
+                      items-center gap-2
+                    "
+                  >
                     <Button
                       onClick={() => onEdit(expense)}
                       variant="outline"
                       buttonType="icon"
-                      className="px-2 py-2"
-                      leftIcon={
-                        <Edit2 size={14} strokeWidth={1.8} />
-                      }
+                      leftIcon={<Edit2 size={14} strokeWidth={1.8} />}
+                      className="
+                        px-2 py-2
+                      "
                     />
 
                     <Button
@@ -333,10 +506,10 @@ export default function ExpensesCard({
                       variant="outline"
                       buttonType="icon"
                       color="danger"
-                      className="px-2 py-2"
-                      leftIcon={
-                        <Trash2 size={14} strokeWidth={1.8} />
-                      }
+                      leftIcon={<Trash2 size={14} strokeWidth={1.8} />}
+                      className="
+                        px-2 py-2
+                      "
                     />
                   </div>
                 )}
@@ -346,107 +519,6 @@ export default function ExpensesCard({
         })}
       </div>
 
-      {/* Pagination Footer */}
-      {!loader && pagination.totalPages > 0 && (
-        <div
-          className="
-            flex flex-col gap-4
-            border-t border-border
-            bg-background/40 px-4 py-4
-            sm:flex-row sm:items-center
-            sm:justify-between
-          "
-        >
-          {/* Showing */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-text-muted">
-              Showing
-            </span>
-
-            <span className="font-semibold text-text">
-              {pagination.total === 0
-                ? 0
-                : (pagination.page - 1) *
-                    pagination.limit +
-                  1}
-              –
-              {Math.min(
-                pagination.page * pagination.limit,
-                pagination.total,
-              )}
-            </span>
-
-            <span className="text-text-muted">
-              of {pagination.total}
-            </span>
-          </div>
-
-          {/* Total */}
-          <div
-            className="
-              flex items-center justify-between
-              rounded-lg border border-border
-              bg-surface px-3 py-2
-              sm:justify-center
-            "
-          >
-            <span className="mr-2 text-xs text-text-muted">
-              Total:
-            </span>
-
-            <span className="text-sm font-bold text-primary">
-              ₹
-              {Number(totalAmount ?? 0).toLocaleString(
-                "en-IN",
-                {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                },
-              )}
-            </span>
-          </div>
-
-          {/* Navigation
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              onClick={() =>
-                onPageChange(pagination.page - 1)
-              }
-              leftIcon={<ArrowLeft size={16} />}
-              type="button"
-              className="px-2 py-2"
-              disabled={pagination.page === 1}
-              buttonType="icon"
-              variant="outline"
-            />
-
-            <span
-              className="
-                flex h-9 min-w-9 items-center
-                justify-center rounded-lg
-                bg-primary px-3 text-sm
-                font-semibold text-white
-              "
-            >
-              {pagination.page}
-            </span>
-
-            <Button
-              onClick={() =>
-                onPageChange(pagination.page + 1)
-              }
-              leftIcon={<ArrowRight size={16} />}
-              type="button"
-              className="px-2 py-2"
-              disabled={
-                pagination.page === pagination.totalPages
-              }
-              buttonType="icon"
-              variant="outline"
-            />
-          </div> */}
-        </div>
-      )}
     </div>
   );
 }

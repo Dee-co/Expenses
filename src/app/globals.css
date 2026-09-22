@@ -50,3 +50,25 @@
   --color-danger: var(--app-danger);
   --color-warning: var(--app-warning);
 }
+.table-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-border) transparent;
+}
+
+.table-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.table-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--app-border);
+  border-radius: 999px;
+}
+
+.table-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--app-text-muted);
+}

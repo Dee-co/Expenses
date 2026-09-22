@@ -25,9 +25,11 @@ import { extractBillText } from "@/lib/ocr";
 import ExpensesCard from "./component/ExpensesCard";
 export default function Expense() {
   const [loading, setLoading] = useState<Boolean>(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [expenses, setExpenses] = useState<ExpensesResponse | null>(null);
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [openScanBillModal, setOpenScanBillModal] = useState(false);
+  const [filterData, setFilterData] = useState<FilterUpdate | null>(null);
   const [scanFormData, setScanFormData] = useState<ScanFormData | null>(null);
   const [editExpenseData, setEditExpenseData] = useState<Expenses | null>(null);
   const [categoryOptions, setCategoryOptions] = useState<
@@ -76,8 +78,13 @@ export default function Expense() {
       Loading.remove();
     }
   };
-  const getExpenses = async (data?: FilterUpdate | null) => {
-    setLoading(true);
+  const getExpenses = async (data?: FilterUpdate | null, page: number = 1) => {
+    const isLoadMore = page > 1;
+    if (isLoadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       if (data?.selectedCategory) {
@@ -86,20 +93,44 @@ export default function Expense() {
       if (data?.title) {
         params.append("search", data.title);
       }
+      if (page) {
+        params.append("page", String(page));
+      }
       const response = await apiService.get<ExpensesResponse>(
         `/api/expenses?${params.toString()}`,
       );
-      setExpenses(response);
+      if (Number(page) > 1) {
+        setExpenses((prev) => {
+          if (!prev) return response;
+          const existingIds = new Set(
+            prev.expenses.map((expense) => expense.id),
+          );
+          const newExpenses = response.expenses.filter(
+            (expense) => !existingIds.has(expense.id),
+          );
+          return {
+            ...response,
+            expenses: [...prev.expenses, ...newExpenses],
+          };
+        });
+      } else {
+        setExpenses(response);
+      }
     } catch (error) {
       console.log("getting error", error);
     } finally {
-      setLoading(false);
+      if (isLoadMore) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
   const handleRefresh = () => {
     getExpenses();
   };
   const handleUpdateFilter = async (data: FilterUpdate) => {
+    setFilterData(data);
     await getExpenses(data);
   };
   const getCategory = async () => {
@@ -276,11 +307,16 @@ export default function Expense() {
           totalAmount={expenses?.totalAmount ?? 0}
           loader={loading}
           onPageChange={(page) => {
-            console.log("change page", page);
+            getExpenses(filterData, page);
           }}
         />
       </div>
-      <div className="hidden md:block">
+      <div
+        className="
+          hidden
+          md:block
+        "
+      >
         <ExpensesTable
           data={expenses?.expenses ?? []}
           pagination={
@@ -296,10 +332,11 @@ export default function Expense() {
             setEditExpenseData(data || null);
             setOpenModal(true);
           }}
+          loadingMore={loadingMore}
           totalAmount={expenses?.totalAmount ?? 0}
           loader={loading}
           onPageChange={(page) => {
-            console.log("change page", page);
+            getExpenses(filterData, page);
           }}
         />
       </div>

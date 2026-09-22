@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     const { userId } = authenticateRequest(request);
     const { searchParams } = new URL(request.url);
     const page = Number(searchParams.get("page") || 1);
-    const limit = Number(searchParams.get("limit") || 10);
+    const limit = Number(searchParams.get("limit") || 5);
     const search = searchParams.get("search") || "";
     const categoryId = searchParams.get("categoryId") || "";
     const startDate = searchParams.get("startDate");

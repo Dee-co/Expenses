@@ -8,7 +8,7 @@ export default function Homepage(){
   useEffect(()=>{
     const accessToken = localStorage.getItem("accessToken")
     if(accessToken){
-      router.replace("/finance")
+      router.replace("/finance/expenses")
     }else{
       router.replace("/auth/signin")
     }

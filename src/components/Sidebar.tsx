@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { apiService } from "@/services/apiService";
 import Button from "./Button";
 import { menuItems } from "@/config/sidebarItems";
+import { Confirm } from "notiflix/build/notiflix-confirm-aio";
+import { Loading } from "notiflix/build/notiflix-loading-aio";
 interface SidebarProps {
   onNavigate?: () => void;
 }
@@ -12,7 +14,7 @@ interface SidebarProps {
 export default function Sidebar({ onNavigate }: SidebarProps) {
   const router = useRouter();
   const pathName = usePathname();
-  const handleLogout = async () => {
+  const signOut = async () => {
     try {
       await apiService.post("/api/auth/logout", {
         refreshToken: localStorage.getItem("refreshToken"),
@@ -23,6 +25,26 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
     } catch (error) {
       console.log(error);
     }
+  };
+  const handleLogout = async () => {
+    Confirm.show(
+      "Sign Out",
+      "Are you sure you want to sign out?",
+      "Yes",
+      "No",
+      async () => {
+        Loading.standard("Signing out...");
+
+        try {
+          await signOut();
+        } catch (error) {
+          console.error("Logout error:", error);
+        } finally {
+          Loading.remove();
+        }
+      },
+      () => {},
+    );
   };
   return (
     <aside

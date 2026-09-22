@@ -15,7 +15,7 @@ import {
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ExpensesTableProps, Expenses } from "./types";
 import Button from "@/components/Button";
 const skeletonRecords: Expenses[] = Array.from({ length: 10 }, (_, index) => ({
@@ -115,10 +115,11 @@ export default function ExpensesTable({
   data,
   pagination,
   loader,
+  loadingMore,
   totalAmount,
   onPageChange,
   onEdit,
-  onDelete
+  onDelete,
 }: ExpensesTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const columns: ColumnDef<Expenses>[] = [
@@ -387,24 +388,63 @@ export default function ExpensesTable({
             "
           >
             <Button
-              onClick={() => {onEdit(row.original)}}
+              onClick={() => {
+                onEdit(row.original);
+              }}
               variant="outline"
               buttonType="icon"
-              className="px-1.5 py-1.5"
               leftIcon={<Edit2 size={12} strokeWidth={1.8} />}
+              className="
+                px-1.5 py-1.5
+              "
             />
             <Button
-              onClick={() => {onDelete(row.original)}}
+              onClick={() => {
+                onDelete(row.original);
+              }}
               variant="outline"
               buttonType="icon"
               color="danger"
-              className="px-1.5 py-1.5"
               leftIcon={<Trash2 size={12} strokeWidth={1.8} />}
+              className="
+                px-1.5 py-1.5
+              "
             />
           </div>
         ),
     },
   ];
+  const requestedPageRef = useRef<number | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (pagination.page === 1) {
+      requestedPageRef.current = null;
+    } else {
+      requestedPageRef.current = pagination.page;
+    }
+  }, [pagination.page]);
+  useEffect(() => {
+    const table = tableRef.current;
+    if (!table) return;
+    const checkForMore = () => {
+      if (loader) return;
+      const { clientHeight, scrollHeight, scrollTop } = table;
+      const isNearBottom = scrollTop + clientHeight + 120 >= scrollHeight;
+      const hasNextPage = pagination.page < pagination.totalPages;
+      const nextPage = pagination.page + 1;
+      if (!isNearBottom || !hasNextPage) return;
+      if (requestedPageRef.current === nextPage) return;
+      requestedPageRef.current = nextPage;
+      onPageChange(nextPage);
+    };
+
+    table.addEventListener("scroll", checkForMore);
+    checkForMore();
+
+    return () => {
+      table.removeEventListener("scroll", checkForMore);
+    };
+  }, [loader, pagination.page, pagination.totalPages, onPageChange]);
   const table = useReactTable({
     data: loader ? skeletonRecords : data,
     columns,
@@ -419,7 +459,7 @@ export default function ExpensesTable({
   return (
     <div
       className="
-        flex flex-col overflow-hidden
+        flex flex-col
         h-[calc(100vh-250px)]
         bg-surface
         rounded-xl border border-border
@@ -469,9 +509,11 @@ export default function ExpensesTable({
       ) : (
         <>
           <div
+            ref={tableRef}
             className="
-              flex-1 overflow-x-auto
+              flex flex-1 flex-col overflow-auto
               min-h-0 w-full
+              table-scrollbar
             "
           >
             <table
@@ -562,6 +604,17 @@ export default function ExpensesTable({
               </tbody>
             </table>
           </div>
+          {loadingMore && (
+            <div
+              className="
+                flex
+                py-3
+                items-center justify-center
+              "
+            >
+              <SkeletonLine width="100px" />
+            </div>
+          )}
           {!loader && pagination.totalPages > 0 && (
             <div
               className="
@@ -593,14 +646,7 @@ export default function ExpensesTable({
                     font-semibold text-text
                   "
                 >
-                  {pagination.total === 0
-                    ? 0
-                    : (pagination.page - 1) * pagination.limit + 1}
-                  –
-                  {Math.min(
-                    pagination.page * pagination.limit,
-                    pagination.total,
-                  )}
+                  {data.length === 0 ? 0 : 1}–{data.length}
                 </span>
 
                 <span
@@ -638,44 +684,6 @@ export default function ExpensesTable({
                     maximumFractionDigits: 2,
                   })}
                 </span>
-              </div>
-              <div
-                className="
-                  flex
-                  items-center gap-2
-                "
-              >
-                <Button
-                  onClick={() => onPageChange(pagination.page - 1)}
-                  leftIcon={<ArrowLeft size={16} />}
-                  type="button"
-                  className="px-2 py-2"
-                  disabled={pagination.page === 1}
-                  buttonType="icon"
-                  variant="outline"
-                ></Button>
-                <span
-                  className="
-                    flex
-                    h-9 min-w-9
-                    px-3
-                    text-sm font-semibold text-white
-                    bg-primary
-                    rounded-lg
-                    items-center justify-center
-                  "
-                >
-                  {pagination.page}
-                </span>
-                <Button
-                  onClick={() => onPageChange(pagination.page + 1)}
-                  leftIcon={<ArrowRight size={16} strokeWidth={1.8}/>}
-                  type="button"
-                  className="px-2 py-2"
-                  disabled={pagination.page === pagination.totalPages}
-                  buttonType="icon"
-                  variant="outline"
-                ></Button>
               </div>
             </div>
           )}

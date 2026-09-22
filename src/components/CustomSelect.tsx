@@ -129,6 +129,10 @@ export default function CustomSelect({
   placeholder: (base) => ({
     ...base,
     color: "var(--app-text-muted)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+
   }),
 
   singleValue: (base) => ({

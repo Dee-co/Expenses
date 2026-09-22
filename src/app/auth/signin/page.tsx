@@ -135,7 +135,7 @@ const getUserDetail = async ()=>{
       
       setSuccess(response.message);
       await getUserDetail()
-      router.replace("/finance");
+      router.replace("/finance/expenses");
     } catch (error: any) {
       setError((prev) => ({
         ...prev,
